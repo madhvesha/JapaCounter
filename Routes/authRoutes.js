@@ -31,8 +31,10 @@ router.post("/register", async (req, res) => {
 
     res.json({ message: "User registered successfully" });
   } catch (err) {
-    res.status(500).json({ message: "Registration failed" });
-  }
+  console.error("REGISTER ERROR:", err);
+  res.status(500).json({ message: "Registration failed" });
+}
+
 });
 
 // LOGIN
@@ -66,8 +68,10 @@ router.post("/login", async (req, res) => {
       name: user.name
     });
   } catch (err) {
-    res.status(500).json({ message: "Login failed" });
-  }
+  console.error("LOGIN ERROR:", err);
+  res.status(500).json({ message: "Login failed" });
+}
+
 });
 
 module.exports = router;
