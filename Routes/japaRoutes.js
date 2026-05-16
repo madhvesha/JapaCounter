@@ -7,11 +7,12 @@ const router = express.Router();
 // Add / Update Japa
 router.post("/add", auth, async (req, res) => {
   const today = new Date().toISOString().split("T")[0];
-  const { count } = req.body;
+  const { count,japaType } = req.body;
 
   let record = await Japa.findOne({
     userId: req.userId,
-    date: today
+    date: today,
+    japaType
   });
 
   if (record) {
@@ -21,7 +22,8 @@ router.post("/add", auth, async (req, res) => {
     record = new Japa({
       userId: req.userId,
       date: today,
-      count
+      count,
+      japaType
     });
     await record.save();
   }
@@ -31,7 +33,11 @@ router.post("/add", auth, async (req, res) => {
 // GET DATE-WISE HISTORY FOR LOGGED-IN USER
 router.get("/history", auth, async (req, res) => {
   try {
-    const history = await Japa.find({ userId: req.userId })
+    const history = await Japa.find({ userId: req.userId }{
+      count: 1,
+      japaType: 1,
+      date: 1
+    })
       .sort({ date: -1 }); // latest first
 
     res.json(history);
@@ -57,16 +63,19 @@ router.get("/leaderboard", auth, async (req, res) => {
     // Per-user leaderboard
     const leaderboard = await Japa.aggregate([
       {
-        $group: {
-          _id: "$userId",
-          totalJapa: { $sum: "$count" }
-        }
+       $group: {
+          _id: {
+           userId: "$userId",
+          japaType: "$japaType"
+        },
+        totalJapa: { $sum: "$count" }
+}
       },
       { $sort: { totalJapa: -1 } },
       {
         $lookup: {
           from: "users",
-          localField: "_id",
+          localField: "_id.userId",
           foreignField: "_id",
           as: "user"
         }
@@ -74,10 +83,11 @@ router.get("/leaderboard", auth, async (req, res) => {
       { $unwind: "$user" },
       {
         $project: {
-          _id: 0,
-          name: "$user.name",
+           _id: 0,
+           name: "$user.name",
+          japaType: "$_id.japaType",
           totalJapa: 1
-        }
+}
       }
     ]);
 
@@ -92,8 +102,9 @@ router.get("/leaderboard", auth, async (req, res) => {
     ]);
 
     res.json({
-      leaderboard,
-      grandTotal: totalResult[0]?.grandTotal || 0
+    leaderboard,
+    grandTotal: totalResult[0]?.grandTotal || 0,
+    japaTypeTotals
     });
   } catch (err) {
     res.status(500).json({ message: "Failed to load leaderboard" });

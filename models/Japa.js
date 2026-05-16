@@ -6,6 +6,10 @@ const japaSchema = new mongoose.Schema({
     ref: "User",
     required: true
   },
+  japaType: {
+  type: String,
+  required: true
+  },
   date: {
     type: String, // YYYY-MM-DD
     required: true
