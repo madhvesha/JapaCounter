@@ -33,12 +33,14 @@ router.post("/add", auth, async (req, res) => {
 // GET DATE-WISE HISTORY FOR LOGGED-IN USER
 router.get("/history", auth, async (req, res) => {
   try {
-    const history = await Japa.find({ userId: req.userId }{
-      count: 1,
-      japaType: 1,
-      date: 1
-    })
-      .sort({ date: -1 }); // latest first
+   const history = await Japa.find(
+  { userId: req.userId },
+  {
+    count: 1,
+    japaType: 1,
+    date: 1
+  }
+).sort({ date: -1 });
 
     res.json(history);
   } catch (err) {
