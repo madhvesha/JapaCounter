@@ -57,92 +57,107 @@ router.get("/", auth, async (req, res) => {
 
 // LEADERBOARD (Top users)
 router.get("/leaderboard", auth, async (req, res) => {
+
   try {
-    // Per-user leaderboard
-  const leaderboard = await Japa.aggregate([
 
-  {
-    $match: {
-      japaType: { $exists: true }
-    }
-  },
+    const leaderboard = await Japa.aggregate([
 
-  {
-    $group: {
-      _id: {
-        userId: "$userId",
-        japaType: "$japaType"
-      },
-      total: {
-        $sum: "$count"
-      }
-    }
-  },
-
-  {
-    $group: {
-      _id: "$_id.userId",
-
-      japas: {
-        $push: {
-          type: "$_id.japaType",
-          count: "$total"
+      {
+        $match: {
+          japaType: { $exists: true }
         }
       },
 
-      totalJapa: {
-        $sum: "$total"
+      {
+        $group: {
+          _id: {
+            userId: "$userId",
+            japaType: "$japaType"
+          },
+
+          total: {
+            $sum: "$count"
+          }
+        }
+      },
+
+      {
+        $group: {
+
+          _id: "$_id.userId",
+
+          japas: {
+            $push: {
+              type: "$_id.japaType",
+              count: "$total"
+            }
+          },
+
+          totalJapa: {
+            $sum: "$total"
+          }
+
+        }
+      },
+
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "user"
+        }
+      },
+
+      {
+        $unwind: "$user"
+      },
+
+      {
+        $project: {
+          _id: 0,
+          name: "$user.name",
+          japas: 1,
+          totalJapa: 1
+        }
+      },
+
+      {
+        $sort: {
+          totalJapa: -1
+        }
       }
-    }
-  },
 
-  {
-    $lookup: {
-      from: "users",
-      localField: "_id",
-      foreignField: "_id",
-      as: "user"
-    }
-  },
+    ]);
 
-  {
-    $unwind: "$user"
-  },
-
-  {
-    $project: {
-      _id: 0,
-      name: "$user.name",
-      japas: 1,
-      totalJapa: 1
-    }
-  },
-
-  {
-    $sort: {
-      totalJapa: -1
-    }
-  }
-
-]);
-    // Grand total of all users
     const totalResult = await Japa.aggregate([
+
       {
         $group: {
           _id: null,
-          grandTotal: { $sum: "$count" }
+          grandTotal: {
+            $sum: "$count"
+          }
         }
       }
+
     ]);
 
     res.json({
-    leaderboard,
-    grandTotal: totalResult[0]?.grandTotal || 0,
-    japaTypeTotals
+      leaderboard,
+      grandTotal: totalResult[0]?.grandTotal || 0
     });
+
   } catch (err) {
-    res.status(500).json({ message: "Failed to load leaderboard" });
+
+    console.log(err);
+
+    res.status(500).json({
+      message: "Failed to load leaderboard"
+    });
+
   }
+
 });
 
 module.exports = router;
