@@ -63,7 +63,13 @@ module.exports = router;
 router.get("/leaderboard", auth, async (req, res) => {
   try {
     // Per-user leaderboard
-   const leaderboard = await Japa.aggregate([
+  const leaderboard = await Japa.aggregate([
+
+  {
+    $match: {
+      japaType: { $exists: true }
+    }
+  },
 
   {
     $group: {
@@ -71,7 +77,9 @@ router.get("/leaderboard", auth, async (req, res) => {
         userId: "$userId",
         japaType: "$japaType"
       },
-      total: { $sum: "$count" }
+      total: {
+        $sum: "$count"
+      }
     }
   },
 
@@ -86,7 +94,9 @@ router.get("/leaderboard", auth, async (req, res) => {
         }
       },
 
-      totalJapa: { $sum: "$total" }
+      totalJapa: {
+        $sum: "$total"
+      }
     }
   },
 
@@ -99,7 +109,9 @@ router.get("/leaderboard", auth, async (req, res) => {
     }
   },
 
-  { $unwind: "$user" },
+  {
+    $unwind: "$user"
+  },
 
   {
     $project: {
@@ -117,7 +129,6 @@ router.get("/leaderboard", auth, async (req, res) => {
   }
 
 ]);
-
     // Grand total of all users
     const totalResult = await Japa.aggregate([
       {
