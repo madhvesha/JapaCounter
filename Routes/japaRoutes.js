@@ -63,35 +63,60 @@ module.exports = router;
 router.get("/leaderboard", auth, async (req, res) => {
   try {
     // Per-user leaderboard
-    const leaderboard = await Japa.aggregate([
-      {
-       $group: {
-          _id: {
-           userId: "$userId",
-          japaType: "$japaType"
-        },
-        totalJapa: { $sum: "$count" }
-}
+   const leaderboard = await Japa.aggregate([
+
+  {
+    $group: {
+      _id: {
+        userId: "$userId",
+        japaType: "$japaType"
       },
-      { $sort: { totalJapa: -1 } },
-      {
-        $lookup: {
-          from: "users",
-          localField: "_id.userId",
-          foreignField: "_id",
-          as: "user"
+      total: { $sum: "$count" }
+    }
+  },
+
+  {
+    $group: {
+      _id: "$_id.userId",
+
+      japas: {
+        $push: {
+          type: "$_id.japaType",
+          count: "$total"
         }
       },
-      { $unwind: "$user" },
-      {
-        $project: {
-           _id: 0,
-           name: "$user.name",
-          japaType: "$_id.japaType",
-          totalJapa: 1
-}
-      }
-    ]);
+
+      totalJapa: { $sum: "$total" }
+    }
+  },
+
+  {
+    $lookup: {
+      from: "users",
+      localField: "_id",
+      foreignField: "_id",
+      as: "user"
+    }
+  },
+
+  { $unwind: "$user" },
+
+  {
+    $project: {
+      _id: 0,
+      name: "$user.name",
+      japas: 1,
+      totalJapa: 1
+    }
+  },
+
+  {
+    $sort: {
+      totalJapa: -1
+    }
+  }
+
+]);
 
     // Grand total of all users
     const totalResult = await Japa.aggregate([
