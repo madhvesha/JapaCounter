@@ -54,10 +54,6 @@ router.get("/", auth, async (req, res) => {
   res.json(records);
 });
 
-module.exports = router;
-
-
-
 
 // LEADERBOARD (Top users)
 router.get("/leaderboard", auth, async (req, res) => {
@@ -148,3 +144,5 @@ router.get("/leaderboard", auth, async (req, res) => {
     res.status(500).json({ message: "Failed to load leaderboard" });
   }
 });
+
+module.exports = router;
